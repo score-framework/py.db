@@ -34,7 +34,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 
 setup(
     name='score.db',
-    version='0.4.3',
+    version='0.4.4',
     description='Database connectivity for The SCORE Framework',
     long_description=README,
     author='strg.at',
@@ -42,6 +42,8 @@ setup(
     url='http://score-framework.org',
     keywords='score framework database orm sqlalchemy pyramid',
     packages=['score.db'],
+    namespace_packages=['score'],
+    zip_safe=False,
     license='LGPL',
     classifiers=[
         'Development Status :: 4 - Beta',
