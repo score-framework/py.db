@@ -10,13 +10,16 @@ libraries for the development of large scale web projects. Powered by strg.at_.
 score.db
 ========
 
-This python package provides a convenient integration of sqlalchemy_ into SCORE.
+This module provides functions and classes that implement our database
+standards and provides helper functions for automating various operations.
+We are using SQLAlchemy_ as our database connectivity and ORM_ layer.
 
-The `narrative documentation of score.ctx`__ contains all the information you
+The `narrative documentation of score.db`__ contains all the information you
 need to put this module to good use.
 
-.. _sqlalchemy: http://docs.sqlalchemy.org/en/latest/
-__ http://www.score-framework.org/doc/python/ctx/
+.. _SQLAlchemy: http://docs.sqlalchemy.org/en/latest/
+.. _ORM: http://en.wikipedia.org/wiki/Object-relational_mapping
+__ http://www.score-framework.org/doc/python/db/
 
 License
 =======
