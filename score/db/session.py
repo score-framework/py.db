@@ -30,6 +30,14 @@ from sqlalchemy.orm.session import Session as SASession
 import sqlalchemy.orm as sa_orm
 
 
+class IdNotFound(Exception):
+    """
+    Thrown by :meth:`.SessionMixin.by_ids` if one of the given ids was not
+    found.
+    """
+    pass
+
+
 class TemporaryTableCreator:
     """
     Helper class that wraps the creation and destruction of temporary tables
@@ -84,10 +92,14 @@ class SessionMixin:
             columns = list(columns)
         return TemporaryTableCreator(self, columns)
 
-    def by_ids(self, type, ids, *, order='_ids', yield_per=100):
+    def by_ids(self, type, ids, *, order='_ids',
+               yield_per=100, ignore_missing=True):
         """
         Yields objects of *type* with given *ids*. The parameter *yield_per*
         defines the chunk size of each database operation.
+
+        If *ignore_missing* evaluates to `False`, the function will raise an
+        IdNotFound exception if one of the ids were not present in the database.
 
         By default, the function will return the objects in the order of their
         id in the *ids* parameter. The following code will print the User with
@@ -109,24 +121,57 @@ class SessionMixin:
             you have enough memory, you might want to pass *yield_per* as
             ``len(ids)`` to avoid that.
         """
+        if ignore_missing:
+            def test_missing(ids, objects):
+                pass
+        else:
+            def test_missing(ids, result):
+                if len(result) == len(ids):
+                    return
+                if isinstance(result, dict):
+                    # most queries return a mapping of id to object, ...
+                    found_ids = list(result.keys())
+                else:
+                    # ... while others just return a list of objects
+                    found_ids = list(map(lambda o: o.id, result))
+                first_missing = next(id for id in ids if id not in found_ids)
+                raise IdNotFound(first_missing)
         if order is None:
+            # unsorted, just return in random order.
+            # note: we're not using sqlalchemy's Query.yield_per() here, since
+            # we could then only detect missing ids after we produced the last
+            # result chunk.
             while len(ids) > 0:
                 chunk = ids[0:yield_per]
                 ids = ids[yield_per:]
-                yield from self.query(type).filter(type.id.in_(chunk))
+                objects = self.query(type).filter(type.id.in_(chunk)).all()
+                test_missing(chunk, objects)
+                yield from objects
             return
         if order == '_ids':
+            # sorted by the ordering of the ids
             while len(ids) > 0:
                 chunk = ids[0:yield_per]
                 ids = ids[yield_per:]
-                objects = dict(self.query(type.id, type).
-                               filter(type.id.in_(chunk)))
-                yield from (objects[id] for id in chunk)
+                result = dict(self.query(type.id, type).
+                              filter(type.id.in_(chunk)))
+                test_missing(chunk, result)
+                yield from (result[id] for id in chunk if id in result)
             return
-        if len(ids) < yield_per:
-            objects = dict(self.query(type.id, type).filter(type.id.in_(ids)))
-            yield from (objects[id] for id in ids)
+        if len(ids) <= yield_per:
+            # sort by something, but use a single query
+            objects = self.query(type).\
+                filter(type.id.in_(ids)).\
+                order_by(order).\
+                all()
+            test_missing(ids, objects)
+            yield from objects
             return
+        # sort by something, and we have more ids than we can put in a single
+        # query (yield_per > len(ids)).  create a temporary table as described
+        # in the function documentation to sort the ids by the given *order* and
+        # perform another query, returning the results in the ordering that we
+        # just established (see last line of this function).
         tmpcols = [
             Column('id', type.id.property.columns[0].type, primary_key=True),
         ]
@@ -139,7 +184,11 @@ class SessionMixin:
                 join(tmp, onclause=(tmp.ref == type.id)).\
                 order_by(order).\
                 all()
-        return self.by_ids(type, sorted_ids, yield_per=yield_per)
+            if not ignore_missing and len(ids) != len(sorted_ids):
+                first_missing = next(id for id in ids if id not in sorted_ids)
+                raise IdNotFound(first_missing)
+        return self.by_ids(type, sorted_ids, order='_id', yield_per=yield_per,
+                           ignore_missing=ignore_missing)
 
 
 def sessionmaker(conf, *args, **kwargs):
