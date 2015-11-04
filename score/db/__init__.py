@@ -29,7 +29,8 @@ from .dataloader import load_yaml, load_url, load_data, DataLoaderException
 from .session import sessionmaker
 from score.init import (
     ConfiguredModule, parse_dotted_path, parse_bool, parse_call)
-from sqlalchemy import engine_from_config, event
+import sqlalchemy as sa
+from sqlalchemy import event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.schema import Column, ForeignKey
@@ -53,7 +54,7 @@ def init(confdict, ctx_conf=None):
 
     :confkey:`sqlalchemy.*`
         All configuration values under this key will be passed to
-        :func:`sqlalchemy.engine_from_config`, which in turn calls
+        :func:`engine_from_config`, which in turn calls
         :func:`sqlalchemy.create_engine` with these configuration values as
         keyword arguments. Usually the following is sufficient::
 
@@ -106,6 +107,46 @@ def init(confdict, ctx_conf=None):
     if ctx_conf and conf['ctx.member'] not in (None, 'None'):
         ctx_conf.register(conf['ctx.member'], lambda ctx: db_conf.Session())
     return db_conf
+
+
+def engine_from_config(config):
+    """
+    A wrapper around :func:`sqlalchemy.engine_from_config`, that converts
+    certain configuration values. Currently, the following configurations are
+    processed:
+
+    - ``sqlalchemy.echo`` (using :func:`score.init.parse_bool`)
+    - ``sqlalchemy.echo_pool`` (using :func:`score.init.parse_bool`)
+    - ``sqlalchemy.case_sensitive`` (using :func:`score.init.parse_bool`)
+    - ``sqlalchemy.module`` (using :func:`score.init.parse_dotted_path`)
+    - ``sqlalchemy.poolclass`` (using :func:`score.init.parse_dotted_path`)
+    - ``sqlalchemy.pool`` (using :func:`score.init.parse_call`)
+    - ``sqlalchemy.pool_size`` (converted to `int`)
+    - ``sqlalchemy.pool_recycle`` (converted to `int`)
+    """
+    if 'sqlalchemy.echo' in config:
+        config['sqlalchemy.echo'] = parse_bool(config['sqlalchemy.echo'])
+    if 'sqlalchemy.echo_pool' in config:
+        config['sqlalchemy.echo_pool'] = \
+            parse_bool(config['sqlalchemy.echo_pool'])
+    if 'sqlalchemy.case_sensitive' in config:
+        config['sqlalchemy.case_sensitive'] = \
+            parse_bool(config['sqlalchemy.case_sensitive'])
+    if 'sqlalchemy.module' in config:
+        config['sqlalchemy.module'] = \
+            parse_dotted_path(config['sqlalchemy.module'])
+    if 'sqlalchemy.poolclass' in config:
+        config['sqlalchemy.poolclass'] = \
+            parse_dotted_path(config['sqlalchemy.poolclass'])
+    if 'sqlalchemy.pool' in config:
+        config['sqlalchemy.pool'] = parse_call(config['sqlalchemy.pool'])
+    if 'sqlalchemy.pool_size' in config:
+        config['sqlalchemy.pool_size'] = \
+            int(config['sqlalchemy.pool_size'])
+    if 'sqlalchemy.pool_recycle' in config:
+        config['sqlalchemy.pool_recycle'] = \
+            int(config['sqlalchemy.pool_recycle'])
+    return sa.engine_from_config(config)
 
 
 class ConfiguredDbModule(ConfiguredModule):

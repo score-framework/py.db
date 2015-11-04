@@ -192,6 +192,8 @@ Configuration
 Helper Functions
 ================
 
+.. autofunction:: score.db.engine_from_config
+
 .. autofunction:: score.db.cls2tbl
 
 .. autofunction:: score.db.tbl2cls
