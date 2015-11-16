@@ -98,6 +98,8 @@ def _postprocess(data, objects=None):
         cls = classes[classname]
         for id in data[classname]:
             obj = objects[classname][id]
+            if not data[classname][id]:
+                continue
             for member in data[classname][id]:
                 value = data[classname][id][member]
                 if member in relationships[classname]:
