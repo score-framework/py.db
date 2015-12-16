@@ -37,6 +37,7 @@ from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import String
 from zope.sqlalchemy import ZopeTransactionExtension
 from .dbenum import Enum
+from .alembic import *
 from ._sa_stmt import (
     DropInheritanceTrigger, CreateInheritanceTrigger,
     generate_create_inheritance_view_statement,
