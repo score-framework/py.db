@@ -34,10 +34,13 @@ from sqlalchemy import event
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.schema import Column, ForeignKey
-from sqlalchemy.sql.expression import Executable, ClauseElement, select
 from sqlalchemy.types import String
 from zope.sqlalchemy import ZopeTransactionExtension
 from .dbenum import Enum
+from ._sa_stmt import (
+    DropInheritanceTrigger, CreateInheritanceTrigger,
+    generate_create_inheritance_view_statement,
+    generate_drop_inheritance_view_statement)
 
 
 defaults = {
@@ -204,28 +207,6 @@ class ConfiguredDbModule(ConfiguredModule):
         destroy(session, self.destroyable)
 
 
-class DropInheritanceTrigger(Executable, ClauseElement):
-    def __init__(self, table):
-        self.table = table
-
-
-class CreateInheritanceTrigger(Executable, ClauseElement):
-    def __init__(self, table, parent):
-        self.table = table
-        self.parent = parent
-
-
-class DropView(Executable, ClauseElement):
-    def __init__(self, name):
-        self.name = name
-
-
-class CreateView(Executable, ClauseElement):
-    def __init__(self, name, select):
-        self.name = name
-        self.select = select
-
-
 class ConfigurationError(Exception):
     pass
 
@@ -260,22 +241,6 @@ def create_base():
             Sqlalchemy event listener that creates all associated views and
             triggers after a table is created.
             """
-            if connection.engine.dialect.name == 'postgresql':
-                from .pg import (
-                    visit_drop_inheritance_trigger,
-                    visit_create_inheritance_trigger,
-                    visit_drop_view,
-                    visit_create_view,
-                )
-            elif connection.engine.dialect.name == 'sqlite':
-                from .sqlite import (
-                    visit_drop_inheritance_trigger,
-                    visit_create_inheritance_trigger,
-                    visit_drop_view,
-                    visit_create_view,
-                )
-            else:
-                return
             def find_class(cls, parent_tables):
                 if cls.__table__ == target:
                     return cls, parent_tables
@@ -291,8 +256,7 @@ def create_base():
             if not result:
                 return
             class_, parent_tables = result
-            viewname = cls2tbl(class_)[1:]
-            dropview = DropView(viewname)
+            dropview = generate_drop_inheritance_view_statement(class_)
             droptrigger = DropInheritanceTrigger(class_.__table__)
             if len(parent_tables) > 0:
                 inheritancetrigger = CreateInheritanceTrigger(class_.__table__,
@@ -300,35 +264,7 @@ def create_base():
             connection.execute(dropview)
             connection.execute(droptrigger)
             if class_.__score_db__['inheritance'] is not None:
-                tables = class_.__table__
-                cols = {}
-                def add_cols(table):
-                    for col in table.c:
-                        if col.name not in cols:
-                            cols[col.name] = col
-                add_cols(class_.__table__)
-                if class_.__score_db__['inheritance'] == 'joined-table':
-                    for table in parent_tables:
-                        tables = tables.join(table, onclause=table.c.id ==
-                                             class_.__table__.c.id)
-                        add_cols(table)
-                    viewselect = select(cols.values(), from_obj=tables)
-                elif class_.__score_db__['parent'] is None:
-                    viewselect = select(cols.values(),
-                                        from_obj=class_.__table__)
-                else:
-                    typecol = getattr(class_,
-                                      class_.__score_db__['type_column'])
-                    typenames = []
-                    def add_typenames(cls):
-                        typenames.append(cls.__score_db__['type_name'])
-                        for subclass in cls.__subclasses__():
-                            add_typenames(subclass)
-                    add_typenames(class_)
-                    viewselect = select(cols.values(),
-                                        from_obj=class_.__table__,
-                                        whereclause=typecol.in_(typenames))
-                createview = CreateView(viewname, viewselect)
+                createview = generate_create_inheritance_view_statement(class_)
                 connection.execute(createview)
             if len(parent_tables) > 0:
                 connection.execute(inheritancetrigger)

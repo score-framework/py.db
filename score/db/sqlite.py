@@ -24,9 +24,6 @@
 # the discretion of STRG.AT GmbH also the competent court, in whose district the
 # Licensee has his registered seat, an establishment or assets.
 
-from score.db import (
-    DropInheritanceTrigger, CreateInheritanceTrigger, DropView, CreateView)
-from sqlalchemy.ext.compiler import compiles
 import transaction
 from zope.sqlalchemy import mark_changed
 
@@ -72,32 +69,3 @@ def destroy(session, destroyable):
             session.execute('DROP TABLE "%s"' % table)
         session.execute("VACUUM")
         mark_changed(session)
-
-
-@compiles(DropInheritanceTrigger, 'sqlite')
-def visit_drop_inheritance_trigger(element, compiler, **kw):
-    return "DROP TRIGGER IF EXISTS autodel%s" % element.table.name
-
-
-@compiles(CreateInheritanceTrigger, 'sqlite')
-def visit_create_inheritance_trigger(element, compiler, **kw):
-    statement = ""
-    statement += "CREATE TRIGGER autodel%s AFTER DELETE ON %s\n" % \
-        (element.table.name, element.table.name)
-    statement += "FOR EACH ROW BEGIN\n"
-    statement += "  DELETE FROM %s WHERE id = OLD.id;\n" % element.parent.name
-    statement += "END\n"
-    return statement
-
-
-@compiles(DropView, 'sqlite')
-def visit_drop_view(element, compiler, **kw):
-    return 'DROP VIEW IF EXISTS "%s"' % element.name
-
-
-@compiles(CreateView, 'sqlite')
-def visit_create_view(element, compiler, **kw):
-    return 'CREATE VIEW "%s" AS %s' % (
-        element.name,
-        compiler.process(element.select, literal_binds=True)
-    )

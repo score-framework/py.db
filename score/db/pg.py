@@ -28,14 +28,10 @@
 Provides functions specific to PostgreSQL databases.
 """
 
-import configparser
-from score.db import DropInheritanceTrigger, CreateInheritanceTrigger, DropView, CreateView
-from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.exc import StatementError
+import logging
 import transaction
 from zope.sqlalchemy import mark_changed
 
-import logging
 log = logging.getLogger(__name__)
 
 
@@ -66,6 +62,7 @@ def list_sequences(session):
         "WHERE sequence_schema='public'"
     return [name for (name, ) in session.execute(sql)]
 
+
 def list_enum_types(session):
     """
     Returns a list of enum type names from the current database.
@@ -87,37 +84,8 @@ def destroy(session, destroyable):
             session.execute('DROP SEQUENCE "%s" CASCADE' % seq)
         for view in list_views(session):
             session.execute('DROP VIEW "%s" CASCADE' % view)
-        for table in list_tables(session):
-            session.execute('DROP TABLE "%s" CASCADE' % table)
         for enum_type in list_enum_types(session):
             session.execute('DROP TYPE "%s" CASCADE' % enum_type)
+        for table in list_tables(session):
+            session.execute('DROP TABLE "%s" CASCADE' % table)
         mark_changed(session)
-
-
-@compiles(DropInheritanceTrigger, 'postgresql')
-def visit_drop_inheritance_trigger(element, compiler, **kw):
-    return "DROP TRIGGER IF EXISTS autodel%s ON %s" % (element.table.name, element.table.name)
-
-@compiles(CreateInheritanceTrigger, 'postgresql')
-def visit_create_inheritance_trigger(element, compiler, **kw):
-    statement = ""
-    statement += "CREATE OR REPLACE FUNCTION autodel%s() RETURNS TRIGGER AS $_$\n" % element.parent.name
-    statement += "    BEGIN\n"
-    statement += "        DELETE FROM %s WHERE id = OLD.id;\n" % element.parent.name
-    statement += "        RETURN OLD;\n"
-    statement += "    END $_$ LANGUAGE 'plpgsql';\n"
-    statement += "CREATE TRIGGER autodel%s AFTER DELETE ON %s\n" % (element.table.name, element.table.name)
-    statement += "FOR EACH ROW EXECUTE PROCEDURE autodel%s();\n" % element.parent.name
-    return statement
-
-@compiles(DropView, 'postgresql')
-def visit_drop_view(element, compiler, **kw):
-    return 'DROP VIEW IF EXISTS "%s"' % element.name
-
-@compiles(CreateView, 'postgresql')
-def visit_create_view(element, compiler, **kw):
-    return 'CREATE VIEW "%s" AS %s' % (
-         element.name,
-         compiler.process(element.select, literal_binds=True)
-     )
-
