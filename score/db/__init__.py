@@ -91,11 +91,6 @@ def init(confdict, ctx_conf=None):
     """
     conf = dict(defaults.items())
     conf.update(confdict)
-    if 'sqlalchemy.poolclass' in conf:
-        conf['sqlalchemy.poolclass'] = \
-            parse_dotted_path(conf['sqlalchemy.poolclass'])
-    if 'sqlalchemy.pool' in conf:
-        conf['sqlalchemy.pool'] = parse_call(conf['sqlalchemy.pool'])
     engine = engine_from_config(conf)
     Base = None
     if 'base' in conf:
