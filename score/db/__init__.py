@@ -26,7 +26,7 @@
 
 from ._init import init, ConfiguredDbModule
 from ._conf import create_base
-from .helpers import (cls2tbl, tbl2cls, create_collection_class,
+from .helpers import (IdType, cls2tbl, tbl2cls, create_collection_class,
                       create_relationship_class)
 
 from .dataloader import load_yaml, load_url, load_data, DataLoaderException
@@ -39,7 +39,7 @@ from ._sa_stmt import (generate_create_inheritance_view_statement,
 _import_dummy
 
 __all__ = (
-    'init', 'ConfiguredDbModule', 'create_base', 'cls2tbl', 'tbl2cls',
+    'init', 'ConfiguredDbModule', 'create_base', 'IdType', 'cls2tbl', 'tbl2cls',
     'create_collection_class', 'create_relationship_class', 'load_yaml',
     'load_url', 'load_data', 'DataLoaderException', 'Enum',
     'generate_create_inheritance_view_statement',
