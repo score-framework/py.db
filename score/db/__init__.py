@@ -24,7 +24,7 @@
 # the discretion of STRG.AT GmbH also the competent court, in whose district the
 # Licensee has his registered seat, an establishment or assets.
 
-from ._init import init, ConfiguredDbModule
+from ._init import init, ConfiguredDbModule, engine_from_config
 from ._conf import create_base
 from .helpers import (IdType, cls2tbl, tbl2cls, create_collection_class,
                       create_relationship_class)
@@ -39,8 +39,8 @@ from ._sa_stmt import (generate_create_inheritance_view_statement,
 _import_dummy
 
 __all__ = (
-    'init', 'ConfiguredDbModule', 'create_base', 'IdType', 'cls2tbl', 'tbl2cls',
-    'create_collection_class', 'create_relationship_class', 'load_yaml',
-    'load_url', 'load_data', 'DataLoaderException', 'Enum',
-    'generate_create_inheritance_view_statement',
+    'init', 'ConfiguredDbModule', 'engine_from_config', 'create_base', 'IdType',
+    'cls2tbl', 'tbl2cls', 'create_collection_class',
+    'create_relationship_class', 'load_yaml', 'load_url', 'load_data',
+    'DataLoaderException', 'Enum', 'generate_create_inheritance_view_statement',
     'generate_drop_inheritance_view_statement')
