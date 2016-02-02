@@ -41,7 +41,7 @@ setup(
     author_email='score@strg.at',
     url='http://score-framework.org',
     keywords='score framework database orm sqlalchemy pyramid',
-    packages=['score.db'],
+    packages=['score', 'score.db'],
     namespace_packages=['score'],
     zip_safe=False,
     license='LGPL',
