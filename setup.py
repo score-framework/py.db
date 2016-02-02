@@ -62,7 +62,7 @@ setup(
         'Topic :: Database :: Front-Ends',
     ],
     install_requires=[
-        'score.init >= 0.2',
+        'score.init >= 0.3',
         'SQLAlchemy >= 0.9',
         'zope.sqlalchemy >= 0.7',
     ],
