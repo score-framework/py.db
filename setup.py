@@ -41,7 +41,7 @@ setup(
     author_email='score@strg.at',
     url='http://score-framework.org',
     keywords='score framework database orm sqlalchemy pyramid',
-    packages=['score.db'],
+    packages=['score', 'score.db'],
     namespace_packages=['score'],
     zip_safe=False,
     license='LGPL',
@@ -62,7 +62,7 @@ setup(
         'Topic :: Database :: Front-Ends',
     ],
     install_requires=[
-        'score.init >= 0.2',
+        'score.init >= 0.3',
         'SQLAlchemy >= 0.9',
         'zope.sqlalchemy >= 0.7',
     ],
