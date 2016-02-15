@@ -62,7 +62,7 @@ def tbl2cls(tbl):
     return ''.join(map(lambda s: s.capitalize(), parts))
 
 
-def create_relationship_class(cls1, cls2, member, *,
+def create_relationship_class(cls1, cls2, member, *, classname=None,
                               sorted=False, duplicates=True, backref=None):
     """
     Creates a class linking two given models and adds appropriate relationship
@@ -74,7 +74,8 @@ def create_relationship_class(cls1, cls2, member, *,
 
     >>> UserGroup = create_relationship_class(User, Group, 'groups')
 
-    This will create a class called UserGroup, which looks like the following:
+    By default, this will create a class called UserGroup, which looks like the
+    following:
 
     >>> class UserGroup(Storable):
     ...     __score_db__: {
@@ -85,6 +86,9 @@ def create_relationship_class(cls1, cls2, member, *,
     ...     user = relationship(Group, foreign_keys=[user_id])
     ...     group_id = Column(IdType, nullable=False, ForeignKey('_group.id'))
     ...     group = relationship(Group, foreign_keys=[group_id])
+
+    You can choose the name of the new class by passing it as the *classname*
+    argument, which also has an effect on the table name.
 
     It will also add a new member 'groups' to the User class, which is of type
     :class:`sqlalchemy.orm.properties.RelationshipProperty`.
@@ -101,7 +105,8 @@ def create_relationship_class(cls1, cls2, member, *,
     second class with the given name.
 
     """
-    name = cls1.__name__ + cls2.__name__
+    if classname is None:
+        classname = cls1.__name__ + cls2.__name__
     idcol1 = cls1.__tablename__[1:] + '_id'
     idcol2 = cls2.__tablename__[1:] + '_id'
     refcol1 = cls1.__tablename__[1:]
@@ -123,7 +128,7 @@ def create_relationship_class(cls1, cls2, member, *,
         }
     if sorted:
         members['index'] = Column(Integer, nullable=False)
-    cls = type(name, (cls1.__score_db__['base'],), members)
+    cls = type(classname, (cls1.__score_db__['base'],), members)
     if sorted:
         rel = relationship(cls2, secondary=cls.__tablename__,
                            order_by='%s.index' % cls.__name__)
