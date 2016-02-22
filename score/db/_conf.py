@@ -28,10 +28,6 @@ from .helpers import IdType, cls2tbl
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
-from ._sa_stmt import (
-    DropInheritanceTrigger, CreateInheritanceTrigger,
-    generate_create_inheritance_view_statement,
-    generate_drop_inheritance_view_statement)
 
 
 class ConfigurationError(Exception):
@@ -60,42 +56,6 @@ def create_base():
                 _BaseMeta.configure_inheritance(cls, classname, bases, attrs)
                 _BaseMeta.set_id(cls, classname, bases, attrs)
             DeclarativeMeta.__init__(cls, classname, bases, attrs)
-            if Base is not None:
-                sa.event.listen(cls.__table__, "after_create",
-                                Base._after_create)
-
-        def _after_create(self, target, connection, **kw):
-            """
-            Sqlalchemy event listener that creates all associated views and
-            triggers after a table is created.
-            """
-            def find_class(cls, parent_tables):
-                if cls.__table__ == target:
-                    return cls, parent_tables
-                parent_tables = parent_tables + [cls.__table__]
-                for subclass in cls.__subclasses__():
-                    result = find_class(subclass, parent_tables)
-                    if result:
-                        return result
-            for subclass in Base.__subclasses__():
-                result = find_class(subclass, [])
-                if result:
-                    break
-            if not result:
-                return
-            class_, parent_tables = result
-            dropview = generate_drop_inheritance_view_statement(class_)
-            droptrigger = DropInheritanceTrigger(class_.__table__)
-            if len(parent_tables) > 0:
-                inheritancetrigger = CreateInheritanceTrigger(class_.__table__,
-                                                              parent_tables[-1])
-            connection.execute(dropview)
-            connection.execute(droptrigger)
-            if class_.__score_db__['inheritance'] is not None:
-                createview = generate_create_inheritance_view_statement(class_)
-                connection.execute(createview)
-            if len(parent_tables) > 0:
-                connection.execute(inheritancetrigger)
 
         def set_config(cls, classname, bases, attrs):
             """

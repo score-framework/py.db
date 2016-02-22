@@ -29,6 +29,10 @@ from score.init import (
     ConfiguredModule, parse_dotted_path, parse_bool, parse_call)
 from zope.sqlalchemy import ZopeTransactionExtension
 from ._session import sessionmaker
+from ._sa_stmt import (
+    DropInheritanceTrigger, CreateInheritanceTrigger,
+    generate_create_inheritance_view_statement,
+    generate_drop_inheritance_view_statement)
 
 
 defaults = {
@@ -149,24 +153,75 @@ class ConfiguredDbModule(ConfiguredModule):
 
     def create(self):
         """
-        Generates all necessary tables, views and sequences.
+        Generates all necessary tables, views, triggers, sequences, etc.
         """
-        # This method could in theory be implemented by calling
-        # self.Base.metadata.create_all()
-        # In practice, though, SQLAlchemy might choos to create tables of
-        # subclasses before their parent classes (observed on an sqlite
-        # database), in which case our views and triggers would reference tables
-        # which do not exist yet.
-        # That's why we create the tables level by level, starting with those
-        # that don't have a parent table and moving downward the hierarchy chain
+        # create all tables
+        self.Base.metadata.create_all()
+        # generate inheritance views and triggers: we do this starting with the
+        # base class and working our way down the inheritance hierarchy
         classes = [cls for cls in self.Base.__subclasses__()
                    if cls.__score_db__['parent'] is None]
         while classes:
-            self.Base.metadata.create_all(
-                tables=map(lambda cls: cls.__table__, classes))
+            for cls in classes:
+                self._create_inheritance_trigger(cls)
+                self._create_inheritance_view(cls)
             classes = [sub for cls in classes for sub in cls.__subclasses__()]
-        # create remaining classes
-        self.Base.metadata.create_all()
+
+    def _create_inheritance_trigger(self, class_):
+        """
+        Creates the inheritance trigger for given *class_*. This trigger will
+        delete entries from parent tables, whenever a row in the given table is
+        deleted.
+
+        Example: assuming the given class ``Administrator`` is a sub-class of
+        ``User``, this will create an sqlite trigger like the following:
+
+            CREATE TRIGGER autodel_administrator
+              AFTER DELETE ON _administrator
+            FOR EACH ROW BEGIN
+              DELETE FROM _user WHERE id = OLD.id;
+            END
+        """
+        parent_tables = []
+        parent = class_.__score_db__['parent']
+        while parent:
+            parent_tables.append(parent.__table__)
+            parent = parent.__score_db__['parent']
+        self.engine.execute(DropInheritanceTrigger(class_.__table__))
+        if parent_tables:
+            self.engine.execute(CreateInheritanceTrigger(
+                class_.__table__, parent_tables[-1]))
+
+    def _create_inheritance_view(self, class_):
+        """
+        Creates the inheritance view for given *class_*. The view combines all
+        fields in the given class, as well as those in parent classes.
+
+        Example: assuming the following table structure:
+
+          CREATE TABLE _file (
+            id INTEGER NOT NULL,
+            name VARCHAR(100)
+          );
+
+          CREATE TABLE _image (
+            id INTEGER NOT NULL,
+            format VARCHAR(10),
+            FOREIGN KEY(id) REFERENCES _file (id)
+          );
+
+        The inheritance view for the ``Image`` class would look like the
+        following:
+
+          CREATE VIEW image AS
+          SELECT f.id, f.name, i.format
+          FROM _file f INNER JOIN _image i ON f.id = i.id
+        """
+        dropview = generate_drop_inheritance_view_statement(class_)
+        self.engine.execute(dropview)
+        if class_.__score_db__['inheritance'] is not None:
+            createview = generate_create_inheritance_view_statement(class_)
+            self.engine.execute(createview)
 
     def destroy(self, session=None):
         """
