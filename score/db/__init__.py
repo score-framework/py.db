@@ -32,6 +32,7 @@ from .helpers import (IdType, cls2tbl, tbl2cls, create_collection_class,
 from .dataloader import load_yaml, load_url, load_data, DataLoaderException
 from .dbenum import Enum
 from .alembic import _import_dummy
+from ._session import SessionMixin
 from ._sa_stmt import (generate_create_inheritance_view_statement,
                        generate_drop_inheritance_view_statement)
 
@@ -42,5 +43,6 @@ __all__ = (
     'init', 'ConfiguredDbModule', 'engine_from_config', 'create_base', 'IdType',
     'cls2tbl', 'tbl2cls', 'create_collection_class',
     'create_relationship_class', 'load_yaml', 'load_url', 'load_data',
-    'DataLoaderException', 'Enum', 'generate_create_inheritance_view_statement',
+    'DataLoaderException', 'Enum', 'SessionMixin',
+    'generate_create_inheritance_view_statement',
     'generate_drop_inheritance_view_statement')

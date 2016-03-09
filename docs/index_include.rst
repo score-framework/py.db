@@ -83,11 +83,11 @@ We have compiled a few common patterns during day to day usage of an ORM and
 implemented them in the form of a mixin, which will be automatically added to
 SQLAlchemy's session class.
 
-.. autoclass:: score.db.session.SessionMixin
+.. autoclass:: score.db.SessionMixin
 
-    .. automethod:: score.db.session.SessionMixin.mktmp
+    .. automethod:: score.db.SessionMixin.mktmp
 
-    .. automethod:: score.db.session.SessionMixin.by_ids
+    .. automethod:: score.db.SessionMixin.by_ids
 
 .. _db_enumerations:
 
@@ -233,17 +233,6 @@ Relationship API
 .. autofunction:: score.db.helpers.create_relationship_class
 
 .. autofunction:: score.db.helpers.create_collection_class
-
-Pyramid Integration
-===================
-
-.. autofunction:: score.db.pyramid.init
-
-.. autofunction:: score.db.pyramid.create_context_factory
-
-.. autofunction:: score.db.pyramid.create_default_pregenerator
-
-.. autoclass:: score.db.pyramid.AutologinAuthenticationPolicy
 
 .. toctree::
     :hidden:
