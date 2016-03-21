@@ -87,15 +87,17 @@ def init(confdict, ctx=None):
     if 'base' in conf:
         Base = parse_dotted_path(conf['base'])
         Base.metadata.bind = engine
-    if ctx:
-        zope_tx = ZopeTransactionExtension(
-            transaction_manager=ctx.tx_manager)
-    else:
-        zope_tx = ZopeTransactionExtension()
     db_conf = ConfiguredDbModule(engine, Base, parse_bool(conf['destroyable']))
-    db_conf.Session = sessionmaker(db_conf, extension=zope_tx, bind=engine)
+    db_conf.Session = sessionmaker(
+        db_conf, extension=ZopeTransactionExtension(), bind=engine)
     if ctx and conf['ctx.member'] not in (None, 'None'):
-        ctx.register(conf['ctx.member'], lambda ctx: db_conf.Session())
+
+        def constructor(ctx):
+            zope_tx = ZopeTransactionExtension(
+                transaction_manager=ctx.tx_manager)
+            return db_conf.Session(extension=zope_tx)
+
+        ctx.register(conf['ctx.member'], constructor)
     return db_conf
 
 
