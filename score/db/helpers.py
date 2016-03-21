@@ -136,9 +136,9 @@ def create_relationship_class(cls1, cls2, member, *, classname=None,
         rel = relationship(cls2, secondary=cls.__tablename__)
     setattr(cls1, member, rel)
     if backref:
-        rel = relationship(cls1, secondary=cls.__tablename__)
+        rel = relationship(cls1, secondary=cls.__tablename__,
+                           remote_side=lambda: cls2.id)
         setattr(cls2, backref, rel)
-        setattr(cls2, 'remote_side', lambda: cls2.id)
     return cls
 
 
