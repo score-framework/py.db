@@ -34,7 +34,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 
 setup(
     name='score.db',
-    version='0.5.5',
+    version='0.5.6',
     description='Database connectivity for The SCORE Framework',
     long_description=README,
     author='strg.at',
