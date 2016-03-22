@@ -80,24 +80,26 @@ def init(confdict, ctx=None):
     :ref:`base class <db_base>`.
 
     """
-    conf = dict(defaults.items())
+    conf = defaults.copy()
     conf.update(confdict)
     engine = engine_from_config(conf)
     Base = None
     if 'base' in conf:
         Base = parse_dotted_path(conf['base'])
         Base.metadata.bind = engine
-    db_conf = ConfiguredDbModule(engine, Base, parse_bool(conf['destroyable']))
-    db_conf.Session = sessionmaker(
-        db_conf, extension=ZopeTransactionExtension(), bind=engine)
+    ctx_member = None
     if ctx and conf['ctx.member'] not in (None, 'None'):
+        ctx_member = conf['ctx.member']
+    db_conf = ConfiguredDbModule(
+        engine, Base, parse_bool(conf['destroyable']), ctx_member)
+    if ctx_member:
 
         def constructor(ctx):
             zope_tx = ZopeTransactionExtension(
                 transaction_manager=ctx.tx_manager)
             return db_conf.Session(extension=zope_tx)
 
-        ctx.register(conf['ctx.member'], constructor)
+        ctx.register(ctx_member, constructor)
     return db_conf
 
 
@@ -147,11 +149,14 @@ class ConfiguredDbModule(ConfiguredModule):
     <score.init.ConfiguredModule>`.
     """
 
-    def __init__(self, engine, Base, destroyable):
+    def __init__(self, engine, Base, destroyable, ctx_member):
         super().__init__(__package__)
         self.engine = engine
         self.Base = Base
         self.destroyable = destroyable
+        self.ctx_member = ctx_member
+        self.Session = sessionmaker(
+            self, extension=ZopeTransactionExtension(), bind=engine)
 
     def create(self):
         """
