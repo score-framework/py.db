@@ -90,6 +90,12 @@ def init(confdict, ctx=None):
     ctx_member = None
     if ctx and conf['ctx.member'] not in (None, 'None'):
         ctx_member = conf['ctx.member']
+    if engine.dialect.name == 'sqlite':
+        @sa.event.listens_for(engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
     db_conf = ConfiguredDbModule(
         engine, Base, parse_bool(conf['destroyable']), ctx_member)
     if ctx_member:

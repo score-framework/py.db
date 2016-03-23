@@ -24,9 +24,6 @@
 # the discretion of STRG.AT GmbH also the competent court, in whose district the
 # Licensee has his registered seat, an establishment or assets.
 
-import transaction
-from zope.sqlalchemy import mark_changed
-
 
 def list_tables(session):
     """
@@ -60,12 +57,12 @@ def destroy(session, destroyable):
     parameter.
     """
     assert destroyable
-    with transaction.manager:
-        for trigger in list_triggers(session):
-            session.execute('DROP TRIGGER "%s"' % trigger)
-        for view in list_views(session):
-            session.execute('DROP VIEW "%s"' % view)
-        for table in list_tables(session):
-            session.execute('DROP TABLE "%s"' % table)
-        session.execute("VACUUM")
-        mark_changed(session)
+    session.execute("PRAGMA foreign_keys=OFF")
+    for trigger in list_triggers(session):
+        session.execute('DROP TRIGGER "%s"' % trigger)
+    for view in list_views(session):
+        session.execute('DROP VIEW "%s"' % view)
+    for table in list_tables(session):
+        session.execute('DROP TABLE "%s"' % table)
+    session.execute("VACUUM")
+    session.execute("PRAGMA foreign_keys=ON")
