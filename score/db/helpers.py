@@ -115,10 +115,18 @@ def create_relationship_class(cls1, cls2, member, *, classname=None,
         '__score_db__': {
             'inheritance': None
         },
-        idcol1: Column(IdType, ForeignKey('%s.id' % cls1.__tablename__),
-                       nullable=False),
-        idcol2: Column(IdType, ForeignKey('%s.id' % cls2.__tablename__),
-                       nullable=False),
+        idcol1: Column(
+            IdType,
+            ForeignKey('%s.id' % cls1.__tablename__,
+                       onupdate="CASCADE",
+                       ondelete="CASCADE"),
+            nullable=False),
+        idcol2: Column(
+            IdType,
+            ForeignKey('%s.id' % cls2.__tablename__,
+                       onupdate="CASCADE",
+                       ondelete="CASCADE"),
+            nullable=False),
     }
     members[refcol1] = relationship(cls1, foreign_keys=members[idcol1])
     members[refcol2] = relationship(cls2, foreign_keys=members[idcol2])
@@ -131,14 +139,23 @@ def create_relationship_class(cls1, cls2, member, *, classname=None,
     cls = type(classname, (cls1.__score_db__['base'],), members)
     if sorted:
         rel = relationship(cls2, secondary=cls.__tablename__,
+                           cascade="all, delete-orphan",
+                           passive_deletes=True,
+                           single_parent=True,
                            order_by='%s.index' % cls.__name__,
                            remote_side=lambda: cls1.id)
     else:
         rel = relationship(cls2, secondary=cls.__tablename__,
+                           cascade="all, delete-orphan",
+                           passive_deletes=True,
+                           single_parent=True,
                            remote_side=lambda: cls1.id)
     setattr(cls1, member, rel)
     if backref:
         rel = relationship(cls1, secondary=cls.__tablename__,
+                           cascade="all, delete-orphan",
+                           passive_deletes=True,
+                           single_parent=True,
                            remote_side=lambda: cls2.id)
         setattr(cls2, backref, rel)
     return cls
