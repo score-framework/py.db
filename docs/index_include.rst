@@ -35,8 +35,8 @@ following class will be assigned the table name ``_user`` (as returned by
         pass
 
 
-ctx-Scoped Sessions
--------------------
+Context Scope
+-------------
 
 When used in combination with :mod:`score.ctx`, it is possible to access an
 sqlalchemy `session <sqlalchemy.orm.session.Session>` within a context, that
@@ -49,7 +49,7 @@ as *ctx.db*:
     
 
 Initialization
---------------
+==============
 
 .. autofunction:: score.db.init
 

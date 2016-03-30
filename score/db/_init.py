@@ -57,7 +57,7 @@ def init(confdict, ctx=None):
 
     :confkey:`base` :faint:`[default=None]`
         The dotted python path to the :ref:`base class <db_base>` to
-        configure. See :func:`parse_dotted_path` for the syntax.
+        configure, as interpreted by func:`score.init.parse_dotted_path`.
 
     :confkey:`destroyable` :faint:`[default=False]`
         Whether destructive operations may be performed on the database. This
@@ -70,10 +70,6 @@ def init(confdict, ctx=None):
         :class:`score.ctx.Context` like this:
 
         >>> ctx.db.query(User).first()
-
-        Providing the special value 'None' will disable registration of the
-        context member, even if a configured :mod:`ctx module <score.ctx>` was
-        provided.
 
     This function will initialize an sqlalchemy
     :ref:`Engine <sqlalchemy:engines_toplevel>` and the provided
@@ -88,7 +84,7 @@ def init(confdict, ctx=None):
         Base = parse_dotted_path(conf['base'])
         Base.metadata.bind = engine
     ctx_member = None
-    if ctx and conf['ctx.member'] not in (None, 'None'):
+    if ctx and conf['ctx.member']:
         ctx_member = conf['ctx.member']
     if engine.dialect.name == 'sqlite':
         @sa.event.listens_for(engine, "connect")
