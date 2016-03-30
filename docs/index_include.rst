@@ -6,14 +6,81 @@
 score.db
 ********
 
-Introduction
-============
-
 This module provides functions and classes that implement our database
 standards and provides helper functions for automating various operations.
 We are using SQLAlchemy_ as our database connectivity and ORM_ layer.
 
-.. _db_base:
+
+Quickstart
+==========
+
+Create a :ref:`base class <db_base_class>`:
+
+.. code-block:: python
+
+    from score.db import create_base
+
+    Storable = create_base()
+
+All persistable classes should derive from this class, they will now
+automatically receive an ``id`` column and a ``__tablename__`` declaration. The
+only thing left to do is to add Columns:
+
+.. code-block:: python
+
+    from .storable import Storable
+    from sqlalchemy import Column, String
+
+    class User(Storable):
+        username = Column(String(100), nullable=False)
+
+
+The module will take care of inheritance mapping, too:
+
+.. code-block:: python
+
+    from .user import User
+    from sqlalchemy import Column, Boolean
+
+
+    class Blogger(User):
+        may_publish = Column(Boolean, nullable=False, default=True)
+
+
+You can then create your database by calling
+:meth:`score.db.ConfiguredDbModule.create`.
+
+>>> from score.init import init_from_file
+>>> score = init_from_file('local.conf')
+>>> score.db.create()
+
+If you are using the :mod:`score.ctx` module, you can always access a
+:class:`session <sqlalchemy.orm.session.Session>` bound to the context object's
+transaction:
+
+>>> ctx.db.query(db.User).get(1)
+<User: sirlancelot>
+
+
+Configuration
+=============
+
+.. autofunction:: score.db.init
+
+
+Features
+========
+
+One of the aims of this module is to establish some sane defaults for the
+database configuration, so the early development within a project can focus on
+the actual, project-specific challenges.
+
+These features should describe all conventions upheld by this module to help
+understand which shortcuts were taken to ensure an out-of-the-box fast and
+robust development environment.
+
+
+.. _db_base_class:
 
 Base Class
 ----------
@@ -35,41 +102,10 @@ following class will be assigned the table name ``_user`` (as returned by
         pass
 
 
-Context Scope
--------------
-
-When used in combination with :mod:`score.ctx`, it is possible to access an
-sqlalchemy `session <sqlalchemy.orm.session.Session>` within a context, that
-has the same scope as the context itself. If the configuration value
-*ctx.member* is left at its default value *db*, the scoped session is available
-as *ctx.db*:
-
->>> ctx.db.query(db.User).get(1)
-<User: sirlancelot>
-    
-
-Initialization
-==============
-
-.. autofunction:: score.db.init
-
-
-Features
-========
-
-One of the aims of this module is to establish some sane defaults for the
-database configuration, so the early development within a project can focus on
-the actual, project-specific challenges.
-
-These features should describe all conventions upheld by this module to help
-understand which shortcuts were taken to ensure an out-of-the-box fast and
-robust development environment.
-
-
 Sqlalchemy Defaults
 -------------------
 
-The :ref:`base class <db_base>` will set some class attributes automatically.
+The :ref:`base class <db_base_class>` will set some class attributes automatically.
 Most of the values shown here assume that the default :ref:`inheritance
 configuration <db_inheritance>`—joined-table inheritance—is used:
 
@@ -314,10 +350,10 @@ configuring the class:
   Defaults to this class's :ref:`view <db_view>` name.
 
 - ``parent``: The parent class of this class in the inheritance chain toward
-  the :ref:`base class <db_base>`. Note that classes deriving from the base
+  the :ref:`base class <db_base_class>`. Note that classes deriving from the base
   class directly will have `None`. This will be determined automatically.
 
-- ``base``: Reference to the :ref:`base class <db_base>`.
+- ``base``: Reference to the :ref:`base class <db_base_class>`.
 
 Note that there are very few cases where one might want to set any of these
 values. The safest to configure manually, and the one where deviating from the
@@ -460,7 +496,7 @@ Configuration
 
     .. attribute:: Base
 
-        The configured :ref:`base class <db_base>`. Can be `None` if no base
+        The configured :ref:`base class <db_base_class>`. Can be `None` if no base
         class was configured.
 
     .. attribute:: destroyable
