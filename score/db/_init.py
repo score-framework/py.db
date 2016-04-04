@@ -26,7 +26,8 @@
 
 import sqlalchemy as sa
 from score.init import (
-    ConfiguredModule, parse_dotted_path, parse_bool, parse_call)
+    ConfiguredModule, ConfigurationError, parse_dotted_path, parse_bool,
+    parse_call)
 from zope.sqlalchemy import ZopeTransactionExtension
 from ._session import sessionmaker
 from ._sa_stmt import (
@@ -79,10 +80,11 @@ def init(confdict, ctx=None):
     conf = defaults.copy()
     conf.update(confdict)
     engine = engine_from_config(conf)
-    Base = None
-    if 'base' in conf:
-        Base = parse_dotted_path(conf['base'])
-        Base.metadata.bind = engine
+    if not conf['base']:
+        import score.db
+        raise ConfigurationError(score.db, 'No base class configured')
+    Base = parse_dotted_path(conf['base'])
+    Base.metadata.bind = engine
     ctx_member = None
     if ctx and conf['ctx.member']:
         ctx_member = conf['ctx.member']
