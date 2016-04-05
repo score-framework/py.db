@@ -36,7 +36,7 @@ class ConfigurationError(Exception):
 
 def create_base():
     """
-    Returns a :ref:`base class <db_base>` for database access objects.
+    Returns a :ref:`base class <db_base_class>` for database access objects.
     """
 
     Base = None
@@ -181,7 +181,7 @@ def create_base():
             """
             Generates the ``id`` column. The column will contain a foreign key
             constraint to parent class' table, if it is not a direct descendant
-            of the :ref:`base class <db_base>`.
+            of the :ref:`base class <db_base_class>`.
             """
             if cls.__score_db__['inheritance'] == 'single-table' and \
                     cls.__score_db__['parent'] is not None:

@@ -57,7 +57,7 @@ def init(confdict, ctx=None):
             sqlalchemy.url = postgresql://dbuser@localhost/projname
 
     :confkey:`base` :faint:`[default=None]`
-        The dotted python path to the :ref:`base class <db_base>` to
+        The dotted python path to the :ref:`base class <db_base_class>` to
         configure, as interpreted by func:`score.init.parse_dotted_path`.
 
     :confkey:`destroyable` :faint:`[default=False]`
@@ -74,7 +74,7 @@ def init(confdict, ctx=None):
 
     This function will initialize an sqlalchemy
     :ref:`Engine <sqlalchemy:engines_toplevel>` and the provided
-    :ref:`base class <db_base>`.
+    :ref:`base class <db_base_class>`.
 
     """
     conf = defaults.copy()
