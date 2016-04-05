@@ -38,7 +38,15 @@ class DataLoaderException(Exception):
 
 def load_data(thing, objects=None):
     """
-    Loads data from a file, a file-like object or a URL.
+    Loads data from given *thing*, i.e. a file, a file-like object or a URL. If
+    the source contains references to other objects loaded in an earlier call,
+    you can pass them as *objects*. Usual usage:
+
+    .. code-block:: python
+
+        objects = load_data('base.yaml')
+        if generate_dummy_data:
+            objects = load_data('dummy.yaml', objects)
     """
     if isinstance(thing, io.IOBase):
         return load_yaml(thing, objects)
@@ -50,11 +58,19 @@ def load_data(thing, objects=None):
 
 
 def load_url(url, objects=None):
+    """
+    Loads objects from a yaml resources under given *url*. See :func:`load_data`
+    for the description of the *objects* parameter.
+    """
     import urllib
     return load_yaml(urllib.request.urlopen(url))
 
 
 def load_yaml(file, objects=None):
+    """
+    Loads objects from a yaml *file*. See :func:`load_data` for the description
+    of the *objects* parameter.
+    """
     import yaml
     try:
         from yaml import CLoader as Loader
