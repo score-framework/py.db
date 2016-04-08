@@ -168,17 +168,19 @@ class ConfiguredDbModule(ConfiguredModule):
         """
         # create all tables
         self.Base.metadata.create_all()
+        session = self.Session(extension=[])
         # generate inheritance views and triggers: we do this starting with the
         # base class and working our way down the inheritance hierarchy
         classes = [cls for cls in self.Base.__subclasses__()
                    if cls.__score_db__['parent'] is None]
         while classes:
             for cls in classes:
-                self._create_inheritance_trigger(cls)
-                self._create_inheritance_view(cls)
+                self._create_inheritance_trigger(session, cls)
+                self._create_inheritance_view(session, cls)
             classes = [sub for cls in classes for sub in cls.__subclasses__()]
+        session.commit()
 
-    def _create_inheritance_trigger(self, class_):
+    def _create_inheritance_trigger(self, session, class_):
         """
         Creates the inheritance trigger for given *class_*. This trigger will
         delete entries from parent tables, whenever a row in the given table is
@@ -198,12 +200,12 @@ class ConfiguredDbModule(ConfiguredModule):
         while parent:
             parent_tables.append(parent.__table__)
             parent = parent.__score_db__['parent']
-        self.engine.execute(DropInheritanceTrigger(class_.__table__))
+        session.execute(DropInheritanceTrigger(class_.__table__))
         if parent_tables:
-            self.engine.execute(CreateInheritanceTrigger(
+            session.execute(CreateInheritanceTrigger(
                 class_.__table__, parent_tables[-1]))
 
-    def _create_inheritance_view(self, class_):
+    def _create_inheritance_view(self, session, class_):
         """
         Creates the inheritance view for given *class_*. The view combines all
         fields in the given class, as well as those in parent classes.
@@ -229,10 +231,10 @@ class ConfiguredDbModule(ConfiguredModule):
           FROM _file f INNER JOIN _image i ON f.id = i.id
         """
         dropview = generate_drop_inheritance_view_statement(class_)
-        self.engine.execute(dropview)
+        session.execute(dropview)
         if class_.__score_db__['inheritance'] is not None:
             createview = generate_create_inheritance_view_statement(class_)
-            self.engine.execute(createview)
+            session.execute(createview)
 
     def destroy(self, session=None):
         """
