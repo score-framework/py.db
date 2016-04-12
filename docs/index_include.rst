@@ -68,8 +68,8 @@ Configuration
 .. autofunction:: score.db.init
 
 
-Features
-========
+Details
+=======
 
 One of the aims of this module is to establish some sane defaults for the
 database configuration, so the early development within a project can focus on
