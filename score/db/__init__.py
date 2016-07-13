@@ -1,4 +1,4 @@
-# Copyright © 2015 STRG.AT GmbH, Vienna, Austria
+# Copyright © 2015,2016 STRG.AT GmbH, Vienna, Austria
 #
 # This file is part of the The SCORE Framework.
 #
@@ -36,7 +36,7 @@ from ._session import SessionMixin
 from ._sa_stmt import (generate_create_inheritance_view_statement,
                        generate_drop_inheritance_view_statement)
 
-__version__ = '0.5.7'
+__version__ = '0.5.8'
 
 # avoid "unused variable" warnings from IDEs
 _import_dummy
