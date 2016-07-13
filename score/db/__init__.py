@@ -36,6 +36,8 @@ from ._session import SessionMixin
 from ._sa_stmt import (generate_create_inheritance_view_statement,
                        generate_drop_inheritance_view_statement)
 
+__version__ = '0.5.7'
+
 # avoid "unused variable" warnings from IDEs
 _import_dummy
 
