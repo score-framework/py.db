@@ -122,29 +122,20 @@ def engine_from_config(config):
     - ``sqlalchemy.pool_size`` (converted to `int`)
     - ``sqlalchemy.pool_recycle`` (converted to `int`)
     """
-    if 'sqlalchemy.echo' in config:
-        config['sqlalchemy.echo'] = parse_bool(config['sqlalchemy.echo'])
-    if 'sqlalchemy.echo_pool' in config:
-        config['sqlalchemy.echo_pool'] = \
-            parse_bool(config['sqlalchemy.echo_pool'])
-    if 'sqlalchemy.case_sensitive' in config:
-        config['sqlalchemy.case_sensitive'] = \
-            parse_bool(config['sqlalchemy.case_sensitive'])
-    if 'sqlalchemy.module' in config:
-        config['sqlalchemy.module'] = \
-            parse_dotted_path(config['sqlalchemy.module'])
-    if 'sqlalchemy.poolclass' in config:
-        config['sqlalchemy.poolclass'] = \
-            parse_dotted_path(config['sqlalchemy.poolclass'])
-    if 'sqlalchemy.pool' in config:
-        config['sqlalchemy.pool'] = parse_call(config['sqlalchemy.pool'])
-    if 'sqlalchemy.pool_size' in config:
-        config['sqlalchemy.pool_size'] = \
-            int(config['sqlalchemy.pool_size'])
-    if 'sqlalchemy.pool_recycle' in config:
-        config['sqlalchemy.pool_recycle'] = \
-            int(config['sqlalchemy.pool_recycle'])
-    return sa.engine_from_config(config)
+    conf = dict()
+    for key in config:
+        if key in ('sqlalchemy.echo', 'sqlalchemy.echo_pool',
+                   'sqlalchemy.case_sensitive'):
+            conf[key] = parse_bool(config[key])
+        elif key in ('sqlalchemy.module', 'sqlalchemy.poolclass'):
+            conf[key] = parse_dotted_path(config[key])
+        elif key == 'sqlalchemy.pool':
+            conf[key] = parse_call(config[key])
+        elif key in ('sqlalchemy.pool_size', 'sqlalchemy.pool_recycle'):
+            conf[key] = int(config[key])
+        else:
+            conf[key] = config[key]
+    return sa.engine_from_config(conf)
 
 
 class ConfiguredDbModule(ConfiguredModule):
