@@ -119,7 +119,11 @@ def _postprocess(data, objects=None):
             for member in data[classname][id]:
                 value = data[classname][id][member]
                 if member in relationships[classname]:
-                    relcls = relationships[classname][member].argument()
+                    relcls = relationships[classname][member].argument
+                    if isinstance(relcls, sa.orm.Mapper):
+                        relcls = relcls.class_
+                    else:
+                        relcls = relcls()
                     if not isinstance(relcls, type):
                         relcls = relcls.__class__
                     value = _replace_object(classes, objects, relcls, value)
