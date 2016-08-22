@@ -113,14 +113,18 @@ def engine_from_config(config):
     certain configuration values. Currently, the following configurations are
     processed:
 
+    - ``sqlalchemy.case_sensitive`` (using :func:`score.init.parse_bool`)
+    - ``sqlalchemy.connect_args.cursorclass`` (using
+      :func:`score.init.parse_dotted_path`)
     - ``sqlalchemy.echo`` (using :func:`score.init.parse_bool`)
     - ``sqlalchemy.echo_pool`` (using :func:`score.init.parse_bool`)
-    - ``sqlalchemy.case_sensitive`` (using :func:`score.init.parse_bool`)
     - ``sqlalchemy.module`` (using :func:`score.init.parse_dotted_path`)
     - ``sqlalchemy.poolclass`` (using :func:`score.init.parse_dotted_path`)
     - ``sqlalchemy.pool`` (using :func:`score.init.parse_call`)
     - ``sqlalchemy.pool_size`` (converted to `int`)
     - ``sqlalchemy.pool_recycle`` (converted to `int`)
+
+    Any other keys are used without conversion.
     """
     conf = dict()
     for key in config:
@@ -129,6 +133,14 @@ def engine_from_config(config):
             conf[key] = parse_bool(config[key])
         elif key in ('sqlalchemy.module', 'sqlalchemy.poolclass'):
             conf[key] = parse_dotted_path(config[key])
+        elif key.startswith('sqlalchemy.connect_args.'):
+            if 'sqlalchemy.connect_args' not in conf:
+                conf['sqlalchemy.connect_args'] = {}
+            value = config[key]
+            key = key[len('sqlalchemy.connect_args.'):]
+            if key == 'cursorclass':
+                value = parse_dotted_path(value)
+            conf['sqlalchemy.connect_args'][key] = value
         elif key == 'sqlalchemy.pool':
             conf[key] = parse_call(config[key])
         elif key in ('sqlalchemy.pool_size', 'sqlalchemy.pool_recycle'):
