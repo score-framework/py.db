@@ -206,7 +206,7 @@ class ConfiguredDbModule(ConfiguredModule):
         session.execute(DropInheritanceTrigger(class_.__table__))
         if parent_tables:
             session.execute(CreateInheritanceTrigger(
-                class_.__table__, parent_tables[-1]))
+                class_.__table__, parent_tables[0]))
 
     def _create_inheritance_view(self, session, class_):
         """
