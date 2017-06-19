@@ -26,8 +26,8 @@
 
 from ._init import init, ConfiguredDbModule, engine_from_config
 from ._conf import create_base
-from .helpers import (IdType, cls2tbl, tbl2cls, create_collection_class,
-                      create_relationship_class)
+from .helpers import (IdType, JSON as JsonType, cls2tbl, tbl2cls,
+                      create_collection_class, create_relationship_class)
 
 from .dataloader import load_yaml, load_url, load_data, DataLoaderException
 from .dbenum import Enum
@@ -43,7 +43,7 @@ _import_dummy
 
 __all__ = (
     'init', 'ConfiguredDbModule', 'engine_from_config', 'create_base', 'IdType',
-    'cls2tbl', 'tbl2cls', 'create_collection_class',
+    'JsonType', 'cls2tbl', 'tbl2cls', 'create_collection_class',
     'create_relationship_class', 'load_yaml', 'load_url', 'load_data',
     'DataLoaderException', 'Enum', 'SessionMixin',
     'generate_create_inheritance_view_statement',

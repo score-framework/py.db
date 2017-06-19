@@ -25,20 +25,45 @@
 # Licensee has his registered seat, an establishment or assets.
 
 import re
-from sqlalchemy import Column, ForeignKey, BigInteger, Integer, UniqueConstraint
+from sqlalchemy import (
+    Column, ForeignKey, BigInteger, Integer, UniqueConstraint, TypeDecorator,
+    String)
 from sqlalchemy.orm import backref, relationship
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.orderinglist import ordering_list
+from sqlalchemy.dialects.postgresql import JSONB
+import json
 
 
 IdType = BigInteger()
 IdType = IdType.with_variant(Integer, 'sqlite')
 
 
+class JsonType(TypeDecorator):
+
+    impl = String
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return json.dumps(value)
+        return None
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return json.loads(value)
+        return None
+
+
+JSON = JSONB()
+JSON = JSON.with_variant(JsonType, 'sqlite')
+
+
 # taken from stackoverflow:
 # http://stackoverflow.com/a/1176023/44562
 _first_cap_re = re.compile('(.)([A-Z][a-z]+)')
 _all_cap_re = re.compile('([a-z0-9])([A-Z])')
+
+
 def cls2tbl(cls):
     """
     Converts a class (or a class name) to a table name. The class name is
