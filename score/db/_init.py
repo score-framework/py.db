@@ -78,7 +78,7 @@ def init(confdict, ctx=None):
     :ref:`base class <db_base_class>`.
 
     """
-    warnings.warn('This module is deprecated in favor of score.sa.orm')
+    warnings.warn('The module score.db is deprecated in favor of score.sa.orm')
     conf = defaults.copy()
     conf.update(confdict)
     engine = engine_from_config(conf)
