@@ -34,6 +34,7 @@ from ._sa_stmt import (
     DropInheritanceTrigger, CreateInheritanceTrigger,
     generate_create_inheritance_view_statement,
     generate_drop_inheritance_view_statement)
+import warnings
 
 
 defaults = {
@@ -77,6 +78,7 @@ def init(confdict, ctx=None):
     :ref:`base class <db_base_class>`.
 
     """
+    warnings.warn('This module is deprecated in favor of score.sa.orm')
     conf = defaults.copy()
     conf.update(confdict)
     engine = engine_from_config(conf)
